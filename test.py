@@ -42,6 +42,9 @@ for filename in files:
 
 body += f"--{boundary}--\r\n"
 
+# Encode the body as UTF-8
+body = body.encode('utf-8')
+
 # Send the POST request
 conn.request("POST", url, body=body, headers=headers)
 
